@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { VideoUploader } from './components/VideoUploader';
 import { ResultDisplay } from './components/ResultDisplay';
 import { SettingsModal } from './components/SettingsModal';
+import { AdminDashboard } from './components/AdminDashboard';
 import { analyzeVideo, fileToGenerativePart, urlToBase64 } from './services/geminiService';
 import { AnalysisMode, FileData, ProcessingStatus, AnalysisResult } from './types';
-import { Sparkles, Video, Languages, AlertCircle, Settings } from 'lucide-react';
+import { Sparkles, Video, Languages, AlertCircle, Settings, Shield } from 'lucide-react';
 
 const App: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
@@ -13,10 +14,11 @@ const App: React.FC = () => {
   const [language, setLanguage] = useState<'en' | 'th'>('th');
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  
+
   // API Key State
   const [apiKey, setApiKey] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
 
   // Load API Key from local storage on mount
   useEffect(() => {
@@ -69,8 +71,8 @@ const App: React.FC = () => {
       setStatus('analyzing');
       const analysisText = await analyzeVideo(
         apiKey,
-        base64Data, 
-        mimeType, 
+        base64Data,
+        mimeType,
         mode,
         language
       );
@@ -86,7 +88,7 @@ const App: React.FC = () => {
       console.error(err);
       setStatus('error');
       setErrorMsg(err instanceof Error ? err.message : "Failed to analyze video");
-      
+
       // If error is related to auth, open settings
       if (err instanceof Error && (err.message.includes('API Key') || err.message.includes('403'))) {
         setIsSettingsOpen(true);
@@ -107,12 +109,18 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0f172a] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-[#0f172a] to-black text-slate-200">
-      
-      <SettingsModal 
-        isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)} 
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
         onSave={handleSaveApiKey}
         currentKey={apiKey}
+      />
+
+      <AdminDashboard
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
+        apiKey={apiKey}
       />
 
       {/* Header */}
@@ -127,15 +135,25 @@ const App: React.FC = () => {
               <p className="text-xs text-blue-400 font-medium">Powered by Gemini 3 Flash</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
-             {/* Language Toggle */}
-            <button 
+            {/* Language Toggle */}
+            <button
               onClick={() => setLanguage(l => l === 'en' ? 'th' : 'en')}
               className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 hover:border-slate-600 transition-colors text-xs font-medium"
             >
               <Languages className="w-3.5 h-3.5" />
               {language === 'en' ? 'English Output' : 'Thai Output (ไทย)'}
+            </button>
+
+            {/* Admin TikTok Rules Button */}
+            <button
+              onClick={() => setIsAdminOpen(true)}
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-600/20 border border-purple-500/30 hover:bg-purple-600/30 hover:border-purple-500/50 transition-colors text-xs font-medium text-purple-400"
+              title="TikTok Rules Admin"
+            >
+              <Shield className="w-3.5 h-3.5" />
+              Admin
             </button>
 
             {/* Settings Button */}
@@ -153,7 +171,7 @@ const App: React.FC = () => {
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-12">
-        
+
         {/* Intro / Hero */}
         <div className="text-center mb-12 space-y-4">
           <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
@@ -171,36 +189,36 @@ const App: React.FC = () => {
 
         {/* Controls Section */}
         <div className="w-full max-w-3xl mx-auto mb-8">
-           {/* Mode Selection */}
-           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-1.5 bg-slate-800/50 rounded-xl border border-slate-700/50 backdrop-blur-sm mb-6">
-              {[
-                { id: AnalysisMode.SUMMARY, label: 'Summary', icon: '📝' },
-                { id: AnalysisMode.TRANSCRIPT, label: 'Transcript', icon: '💬' },
-                { id: AnalysisMode.KEY_POINTS, label: 'Key Points', icon: '🎯' },
-                { id: AnalysisMode.SAFETY, label: 'Safety Check', icon: '🛡️' }
-              ].map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => setMode(m.id)}
-                  disabled={isProcessing}
-                  className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200
-                    ${mode === m.id 
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
-                      : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-                    }
+          {/* Mode Selection */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-1.5 bg-slate-800/50 rounded-xl border border-slate-700/50 backdrop-blur-sm mb-6">
+            {[
+              { id: AnalysisMode.SUMMARY, label: 'Summary', icon: '📝' },
+              { id: AnalysisMode.TRANSCRIPT, label: 'Transcript', icon: '💬' },
+              { id: AnalysisMode.KEY_POINTS, label: 'Key Points', icon: '🎯' },
+              { id: AnalysisMode.SAFETY, label: 'Safety Check', icon: '🛡️' }
+            ].map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setMode(m.id)}
+                disabled={isProcessing}
+                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200
+                    ${mode === m.id
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                  }
                   `}
-                >
-                  <span>{m.icon}</span>
-                  {m.label}
-                </button>
-              ))}
-           </div>
+              >
+                <span>{m.icon}</span>
+                {m.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Upload Area */}
-        <VideoUploader 
-          onFileSelect={handleFileSelect} 
-          selectedFile={selectedFile} 
+        <VideoUploader
+          onFileSelect={handleFileSelect}
+          selectedFile={selectedFile}
           disabled={isProcessing}
         />
 
@@ -211,8 +229,8 @@ const App: React.FC = () => {
             disabled={!selectedFile || isProcessing}
             className={`
               relative overflow-hidden group flex items-center gap-3 px-8 py-4 rounded-full font-bold text-lg transition-all duration-300
-              ${!selectedFile 
-                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700' 
+              ${!selectedFile
+                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                 : isProcessing
                   ? 'bg-slate-700 text-blue-300 cursor-wait border border-blue-500/30'
                   : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-xl shadow-blue-900/20 hover:shadow-blue-900/40 hover:scale-105 active:scale-95'
@@ -242,13 +260,13 @@ const App: React.FC = () => {
         )}
 
         {/* Results */}
-        <ResultDisplay 
-          result={result} 
-          loading={status === 'analyzing'} 
+        <ResultDisplay
+          result={result}
+          loading={status === 'analyzing'}
           apiKey={apiKey}
           onUpdateResult={handleUpdateResult}
         />
-        
+
       </main>
     </div>
   );

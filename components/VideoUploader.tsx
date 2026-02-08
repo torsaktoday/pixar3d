@@ -17,7 +17,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onFileSelect, sele
 
   const handleFile = (file: File) => {
     setError(null);
-    
+
     if (!file.type.startsWith('video/')) {
       setError("Please upload a valid video file (MP4, WebM, MOV).");
       return;
@@ -50,7 +50,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onFileSelect, sele
     }
 
     // Basic mime type guess (not perfect, but helpful for initial UI)
-    const mimeType = 'video/mp4'; 
+    const mimeType = 'video/mp4';
     onFileSelect({ url: urlInput, previewUrl: urlInput, type: 'url', mimeType });
   };
 
@@ -104,16 +104,16 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onFileSelect, sele
           >
             <X className="w-5 h-5" />
           </button>
-          
+
           <div className="aspect-video bg-black flex items-center justify-center">
-            <video 
-              src={selectedFile.previewUrl} 
-              controls 
+            <video
+              src={selectedFile.previewUrl}
+              controls
               className="w-full h-full object-contain max-h-[400px]"
               onError={() => setError("Could not load video preview. The URL might be restricted or invalid.")}
             />
           </div>
-          
+
           <div className="p-4 flex items-center gap-3 border-t border-slate-700">
             <div className="p-2 bg-blue-500/20 text-blue-400 rounded-lg">
               {selectedFile.type === 'file' ? <FileVideo className="w-6 h-6" /> : <LinkIcon className="w-6 h-6" />}
@@ -123,14 +123,14 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onFileSelect, sele
                 {selectedFile.type === 'file' ? selectedFile.file?.name : selectedFile.url}
               </p>
               <p className="text-xs text-slate-400">
-                {selectedFile.type === 'file' && selectedFile.file 
-                  ? `${(selectedFile.file.size / (1024 * 1024)).toFixed(2)} MB` 
+                {selectedFile.type === 'file' && selectedFile.file
+                  ? `${(selectedFile.file.size / (1024 * 1024)).toFixed(2)} MB`
                   : 'Remote URL Source'}
               </p>
             </div>
           </div>
           {error && (
-             <div className="px-4 pb-4 text-red-400 text-sm">{error}</div>
+            <div className="px-4 pb-4 text-red-400 text-sm">{error}</div>
           )}
         </div>
       ) : (
@@ -189,38 +189,48 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onFileSelect, sele
                 </div>
               </div>
             ) : (
-              <div className="h-56 flex flex-col justify-center items-center gap-4">
-                 <div className="w-full max-w-md space-y-4">
-                    <div className="text-center">
-                       <div className="mx-auto w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center mb-3">
-                          <Globe className="w-6 h-6 text-blue-400" />
-                       </div>
-                       <p className="text-sm text-slate-300 mb-4">
-                         Enter a direct link to a video file.
-                         <br/><span className="text-xs text-slate-500">(Note: URL must support CORS for browser access)</span>
-                       </p>
+              <div className="h-auto min-h-56 flex flex-col justify-center items-center gap-4 py-6">
+                <div className="w-full max-w-md space-y-4">
+                  <div className="text-center">
+                    <div className="mx-auto w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center mb-3">
+                      <Globe className="w-6 h-6 text-blue-400" />
                     </div>
-                    <form onSubmit={handleUrlSubmit} className="flex gap-2">
-                       <input 
-                         type="url" 
-                         placeholder="https://example.com/video.mp4" 
-                         className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500 placeholder-slate-500"
-                         value={urlInput}
-                         onChange={(e) => setUrlInput(e.target.value)}
-                         disabled={disabled}
-                       />
-                       <button 
-                         type="submit"
-                         disabled={disabled}
-                         className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
-                       >
-                         Add
-                       </button>
-                    </form>
-                 </div>
+                    <p className="text-sm text-slate-300 mb-2">
+                      ใส่ลิงก์ไปยังไฟล์วิดีโอโดยตรง
+                    </p>
+                    <p className="text-xs text-slate-500 mb-4">
+                      รองรับ: ลิงก์ .mp4, .webm, .mov โดยตรง
+                    </p>
+                  </div>
+                  <form onSubmit={handleUrlSubmit} className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://example.com/video.mp4"
+                      className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500 placeholder-slate-500"
+                      value={urlInput}
+                      onChange={(e) => setUrlInput(e.target.value)}
+                      disabled={disabled}
+                    />
+                    <button
+                      type="submit"
+                      disabled={disabled}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                      เพิ่ม
+                    </button>
+                  </form>
+                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mt-4">
+                    <p className="text-xs text-yellow-400 mb-2 font-medium">⚠️ ข้อจำกัดการใช้งาน URL:</p>
+                    <ul className="text-xs text-yellow-300/80 space-y-1 list-disc list-inside">
+                      <li>ลิงก์ YouTube, TikTok, Facebook, Instagram <span className="text-red-400">ไม่รองรับโดยตรง</span></li>
+                      <li>กรุณาดาวน์โหลดวิดีโอก่อนแล้วอัปโหลดไฟล์</li>
+                      <li>หรือใช้ลิงก์ไฟล์วิดีโอโดยตรง (.mp4)</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             )}
-            
+
             {error && (
               <p className="mt-4 text-red-400 text-sm text-center animate-pulse">{error}</p>
             )}
