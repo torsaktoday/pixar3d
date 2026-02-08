@@ -28,13 +28,14 @@ export interface ProductionScene {
   actionGuide: string;
 }
 
-// Video Motion/Mood Types - 5 Thai-focused options
+// Video Motion/Mood Types - 6 Thai-focused options
 export type VideoMood =
   | 'original'      // ตามต้นฉบับ - Default
   | 'excited'       // ตื่นเต้นเร้าใจ
   | 'energetic'     // กระฉับกระเฉง
   | 'emotional'     // เศร้าซึ้ง
-  | 'cinematic';    // อลังการภาพยนตร์
+  | 'cinematic'     // อลังการภาพยนตร์
+  | 'creative';     // สร้างสรรค์ - AI คิดใหม่ไม่ copy
 
 
 export interface VideoMoodConfig {

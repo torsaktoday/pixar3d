@@ -354,6 +354,16 @@ export const VIDEO_MOOD_CONFIGS = {
     promptKeywords: 'epic cinematic, blockbuster style, dramatic lighting, high contrast, intense composition, shadow play, movie-quality, grand scale, hollywood aesthetic',
     cameraMovement: 'slow motion, epic wide shots, dramatic reveal, sweeping crane, dolly zoom',
     pacing: 'building tension, impactful pauses, climactic moments, theatrical timing'
+  },
+  creative: {
+    id: 'creative' as const,
+    label: 'Creative',
+    labelTh: 'สร้างสรรค์',
+    emoji: '✨',
+    description: 'AI คิดใหม่ เรียบเรียงใหม่ ไม่ copy ต้นฉบับ แต่รักษาความหมายเดิม',
+    promptKeywords: 'reimagined, fresh perspective, creative interpretation, unique expression, artistic freedom, original wording, paraphrased creatively',
+    cameraMovement: 'creative angles, unique perspectives, artistic shots, experimental framing',
+    pacing: 'flowing, natural rhythm, engaging, fresh delivery'
   }
 };
 
@@ -365,7 +375,7 @@ export const generateProductionGuide = async (
   baseScript: string,
   style: 'REAL' | 'PIXAR',
   remixTopic?: string,
-  mood: 'original' | 'excited' | 'energetic' | 'emotional' | 'cinematic' = 'original'
+  mood: 'original' | 'excited' | 'energetic' | 'emotional' | 'cinematic' | 'creative' = 'original'
 ): Promise<ProductionGuide> => {
   const ai = new GoogleGenAI({ apiKey });
 
@@ -389,7 +399,20 @@ export const generateProductionGuide = async (
        - If the original is serious, maintain that seriousness.
        - DO NOT make it more "professional" or "corporate" unless that's the original's tone.
        - Preserve: jokes, playfulness, excitement, casual language, personality.`
-    : `MOOD/TONE: "${moodConfig.label}" (${moodConfig.labelTh})
+    : mood === 'creative'
+      ? `MOOD/TONE: "Creative Rewrite" (สร้างสรรค์)
+       - CRITICAL: DO NOT copy the original script word-for-word.
+       - REWRITE and PARAPHRASE all spoken lines to express the SAME meaning but with DIFFERENT words.
+       - Think of it as "inspired by" rather than "copied from" the original.
+       - Maintain the CORE MESSAGE and KEY POINTS but use fresh, creative language.
+       - Add your own creative flair and expressions while keeping the same intent.
+       - The goal is to avoid copyright issues by creating original wording.
+       - Keep the same emotional tone but express it in a new, unique way.
+       - You may add creative metaphors, analogies, or expressions that enhance the message.
+       - NEVER use the exact same sentences from the Base Script.
+       - Keywords: ${moodConfig.promptKeywords}
+       - Camera: ${moodConfig.cameraMovement}`
+      : `MOOD/TONE: "${moodConfig.label}" (${moodConfig.labelTh})
        - Mood Keywords: ${moodConfig.promptKeywords}
        - Camera Movement Style: ${moodConfig.cameraMovement}
        - Pacing: ${moodConfig.pacing}
@@ -436,14 +459,14 @@ export const generateProductionGuide = async (
     "scenes": [
       {
         "timestamp": "[00:00]",
-        "script": "The spoken line for this scene (Thai)",
-        "visualPrompt": "DETAILED English prompt that captures the mood. Include: subject action, expression, environment, lighting, camera movement, and energy level. Make it feel ${mood === 'original' ? 'authentic to source' : moodConfig.labelTh}.",
+        "script": "${mood === 'creative' ? 'CREATIVELY REWRITTEN spoken line - same meaning, different words (Thai). DO NOT copy original text.' : 'The spoken line for this scene (Thai)'}",
+        "visualPrompt": "DETAILED English prompt that captures the mood. Include: subject action, expression, environment, lighting, camera movement, and energy level. Make it feel ${mood === 'original' ? 'authentic to source' : mood === 'creative' ? 'fresh and creatively reimagined' : moodConfig.labelTh}.",
         "actionGuide": "SPECIFIC direction: facial expression (smiling, concerned, excited), body language (leaning forward, gesturing with hands), energy level (high/medium/low), pauses or emphasis points."
       }
     ]
   }
   
-  Remember: The script might be in Thai but reflects a certain personality. YOUR JOB is to capture that personality in the English visualPrompts, not make it generic.
+  ${mood === 'creative' ? 'CRITICAL REMINDER FOR CREATIVE MODE: Every "script" field MUST be a CREATIVE REWRITE. You are a creative writer who paraphrases and reimagines the original message. Same meaning, completely different wording. Never copy-paste from the Base Script.' : 'Remember: The script might be in Thai but reflects a certain personality. YOUR JOB is to capture that personality in the English visualPrompts, not make it generic.'}
   `;
 
   try {
