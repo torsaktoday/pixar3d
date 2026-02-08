@@ -3,7 +3,7 @@ import { VideoUploader } from './components/VideoUploader';
 import { ResultDisplay } from './components/ResultDisplay';
 import { SettingsModal } from './components/SettingsModal';
 import { AdminDashboard } from './components/AdminDashboard';
-import { analyzeVideo, fileToGenerativePart, urlToBase64 } from './services/geminiService';
+import { analyzeVideo, fileToGenerativePart } from './services/geminiService';
 import { AnalysisMode, FileData, ProcessingStatus, AnalysisResult } from './types';
 import { Sparkles, Video, Languages, AlertCircle, Settings, Shield } from 'lucide-react';
 
@@ -20,11 +20,13 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
 
+  // Manual Script State
+  const [manualScriptActive, setManualScriptActive] = useState(false);
+
   // Load API Key from local storage on mount
   useEffect(() => {
     const storedKey = localStorage.getItem('gemini_api_key');
     if (storedKey) setApiKey(storedKey);
-    // If we have no key in env and no key in storage, user needs to input it.
   }, []);
 
   const handleSaveApiKey = (key: string) => {
@@ -36,6 +38,40 @@ const App: React.FC = () => {
     setSelectedFile(fileData);
     setResult(null);
     setStatus('idle');
+    setErrorMsg(null);
+    setManualScriptActive(false);
+  };
+
+  // Handle manual script submission - go directly to Creative Studio
+  const handleManualScript = (script: string, characters: string) => {
+    if (!apiKey) {
+      setIsSettingsOpen(true);
+      setErrorMsg("กรุณาตั้งค่า API Key ก่อน");
+      return;
+    }
+
+    // Combine characters and script for the base script
+    let fullScript = '';
+    if (characters.trim()) {
+      fullScript += `## ตัวละคร / Characters:\n${characters}\n\n---\n\n`;
+    }
+    fullScript += `## สคริปต์ / Script:\n${script}`;
+
+    // Create a "fake" safety result to launch Creative Studio directly
+    const safetyResult = {
+      riskScore: 0,
+      violations: [],
+      explanation: "สคริปต์จาก Manual Input - พร้อมใช้งาน",
+      transcript_summary: fullScript
+    };
+
+    setResult({
+      text: JSON.stringify(safetyResult),
+      mode: AnalysisMode.SAFETY,
+      timestamp: Date.now()
+    });
+    setStatus('completed');
+    setManualScriptActive(true);
     setErrorMsg(null);
   };
 
@@ -56,18 +92,15 @@ const App: React.FC = () => {
       let base64Data = '';
       let mimeType = selectedFile.mimeType;
 
-      // 1. Prepare Data
+      // Prepare Data (only file upload now)
       if (selectedFile.type === 'file' && selectedFile.file) {
         setStatus('uploading');
         base64Data = await fileToGenerativePart(selectedFile.file);
-      } else if (selectedFile.type === 'url' && selectedFile.url) {
-        setStatus('fetching');
-        base64Data = await urlToBase64(selectedFile.url);
       } else {
         throw new Error("Invalid file source.");
       }
 
-      // 2. Call Gemini (passing the apiKey)
+      // Call Gemini
       setStatus('analyzing');
       const analysisText = await analyzeVideo(
         apiKey,
@@ -105,7 +138,7 @@ const App: React.FC = () => {
     } : null);
   };
 
-  const isProcessing = status === 'uploading' || status === 'analyzing' || status === 'fetching';
+  const isProcessing = status === 'uploading' || status === 'analyzing';
 
   return (
     <div className="min-h-screen bg-[#0f172a] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-[#0f172a] to-black text-slate-200">
@@ -127,12 +160,12 @@ const App: React.FC = () => {
       <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-900/20">
               <Video className="w-6 h-6 text-white" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-white tracking-tight">VideoLens AI</h1>
-              <p className="text-xs text-blue-400 font-medium">Powered by Gemini 3 Flash</p>
+              <p className="text-xs text-purple-400 font-medium">Script to Video Production</p>
             </div>
           </div>
 
@@ -175,81 +208,84 @@ const App: React.FC = () => {
         {/* Intro / Hero */}
         <div className="text-center mb-12 space-y-4">
           <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-            Video Understanding, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Simplified</span>.
+            Script to <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Production</span>.
           </h2>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            Upload a video clip or enter a URL to extract summaries, transcribe audio, or analyze safety compliance instantly.
+            เขียนสคริปต์ กำหนดตัวละคร แล้วให้ AI สร้าง Visual Prompt และ Production Guide ให้อัตโนมัติ
           </p>
           {!apiKey && (
             <div className="inline-block mt-4 px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-200 text-sm">
-              ⚠️ Please click the gear icon <Settings className="w-3 h-3 inline mx-1" /> to set your API Key first.
+              ⚠️ กรุณาคลิกที่ไอคอนเฟือง <Settings className="w-3 h-3 inline mx-1" /> เพื่อตั้งค่า API Key ก่อนใช้งาน
             </div>
           )}
         </div>
 
-        {/* Controls Section */}
-        <div className="w-full max-w-3xl mx-auto mb-8">
-          {/* Mode Selection */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-1.5 bg-slate-800/50 rounded-xl border border-slate-700/50 backdrop-blur-sm mb-6">
-            {[
-              { id: AnalysisMode.SUMMARY, label: 'Summary', icon: '📝' },
-              { id: AnalysisMode.TRANSCRIPT, label: 'Transcript', icon: '💬' },
-              { id: AnalysisMode.KEY_POINTS, label: 'Key Points', icon: '🎯' },
-              { id: AnalysisMode.SAFETY, label: 'Safety Check', icon: '🛡️' }
-            ].map((m) => (
-              <button
-                key={m.id}
-                onClick={() => setMode(m.id)}
-                disabled={isProcessing}
-                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200
-                    ${mode === m.id
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-                  }
-                  `}
-              >
-                <span>{m.icon}</span>
-                {m.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Upload Area */}
+        {/* Upload / Manual Input Area */}
         <VideoUploader
           onFileSelect={handleFileSelect}
           selectedFile={selectedFile}
           disabled={isProcessing}
+          onManualScript={handleManualScript}
         />
 
-        {/* Action Button */}
-        <div className="flex justify-center mb-12">
-          <button
-            onClick={handleAnalyze}
-            disabled={!selectedFile || isProcessing}
-            className={`
-              relative overflow-hidden group flex items-center gap-3 px-8 py-4 rounded-full font-bold text-lg transition-all duration-300
-              ${!selectedFile
-                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                : isProcessing
-                  ? 'bg-slate-700 text-blue-300 cursor-wait border border-blue-500/30'
-                  : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-xl shadow-blue-900/20 hover:shadow-blue-900/40 hover:scale-105 active:scale-95'
-              }
-            `}
-          >
-            {isProcessing ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                {status === 'fetching' ? 'Fetching Video...' : status === 'uploading' ? 'Preparing File...' : 'Analyzing with Gemini...'}
-              </>
-            ) : (
-              <>
-                <Sparkles className={`w-5 h-5 ${selectedFile ? 'animate-pulse' : ''}`} />
-                Generate {mode === AnalysisMode.TRANSCRIPT ? 'Transcription' : 'Analysis'}
-              </>
-            )}
-          </button>
-        </div>
+        {/* Action Button - Only show for video analysis */}
+        {selectedFile && !manualScriptActive && (
+          <>
+            {/* Controls Section for Video Analysis */}
+            <div className="w-full max-w-3xl mx-auto mb-8">
+              {/* Mode Selection */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-1.5 bg-slate-800/50 rounded-xl border border-slate-700/50 backdrop-blur-sm mb-6">
+                {[
+                  { id: AnalysisMode.SUMMARY, label: 'Summary', icon: '📝' },
+                  { id: AnalysisMode.TRANSCRIPT, label: 'Transcript', icon: '💬' },
+                  { id: AnalysisMode.KEY_POINTS, label: 'Key Points', icon: '🎯' },
+                  { id: AnalysisMode.SAFETY, label: 'Safety Check', icon: '🛡️' }
+                ].map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setMode(m.id)}
+                    disabled={isProcessing}
+                    className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200
+                        ${mode === m.id
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                      }
+                      `}
+                  >
+                    <span>{m.icon}</span>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-center mb-12">
+              <button
+                onClick={handleAnalyze}
+                disabled={!selectedFile || isProcessing}
+                className={`
+                  relative overflow-hidden group flex items-center gap-3 px-8 py-4 rounded-full font-bold text-lg transition-all duration-300
+                  ${isProcessing
+                    ? 'bg-slate-700 text-blue-300 cursor-wait border border-blue-500/30'
+                    : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-xl shadow-blue-900/20 hover:shadow-blue-900/40 hover:scale-105 active:scale-95'
+                  }
+                `}
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    {status === 'uploading' ? 'Preparing File...' : 'Analyzing with Gemini...'}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5 animate-pulse" />
+                    Generate {mode === AnalysisMode.TRANSCRIPT ? 'Transcription' : 'Analysis'}
+                  </>
+                )}
+              </button>
+            </div>
+          </>
+        )}
 
         {/* Error Message */}
         {errorMsg && (
