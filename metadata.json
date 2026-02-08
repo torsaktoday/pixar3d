@@ -1,0 +1,4 @@
+{
+  "name": "VideoLens AI",
+  "description": "An intelligent video analysis tool that extracts summaries, transcriptions, and insights from uploaded video clips using Gemini 2.5 Flash."
+}
