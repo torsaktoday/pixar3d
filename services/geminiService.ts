@@ -364,6 +364,16 @@ export const VIDEO_MOOD_CONFIGS = {
     promptKeywords: 'reimagined, fresh perspective, creative interpretation, unique expression, artistic freedom, original wording, paraphrased creatively',
     cameraMovement: 'creative angles, unique perspectives, artistic shots, experimental framing',
     pacing: 'flowing, natural rhythm, engaging, fresh delivery'
+  },
+  funny: {
+    id: 'funny' as const,
+    label: 'Funny',
+    labelTh: 'ตลกสนุก',
+    emoji: '😂',
+    description: 'สนุกสนาน มีอารมณ์ขัน แต่ยังคงสาระและมีประโยชน์',
+    promptKeywords: 'comedic, humorous, witty, playful expressions, funny reactions, lighthearted, entertaining, amusing gestures, comical timing, smile-inducing',
+    cameraMovement: 'comedic timing shots, reaction close-ups, exaggerated angles, playful zooms, funny reveals',
+    pacing: 'comedic beats, pause for punchlines, snappy timing, build-up to jokes, fun transitions'
   }
 };
 
@@ -375,7 +385,7 @@ export const generateProductionGuide = async (
   baseScript: string,
   style: 'REAL' | 'PIXAR',
   remixTopic?: string,
-  mood: 'original' | 'excited' | 'energetic' | 'emotional' | 'cinematic' | 'creative' = 'original'
+  mood: 'original' | 'excited' | 'energetic' | 'emotional' | 'cinematic' | 'creative' | 'funny' = 'original'
 ): Promise<ProductionGuide> => {
   const ai = new GoogleGenAI({ apiKey });
 
@@ -412,7 +422,20 @@ export const generateProductionGuide = async (
        - NEVER use the exact same sentences from the Base Script.
        - Keywords: ${moodConfig.promptKeywords}
        - Camera: ${moodConfig.cameraMovement}`
-      : `MOOD/TONE: "${moodConfig.label}" (${moodConfig.labelTh})
+      : mood === 'funny'
+        ? `MOOD/TONE: "Funny & Educational" (ตลกสนุกแต่มีสาระ)
+       - Make the content ENTERTAINING and HUMOROUS while keeping it INFORMATIVE.
+       - Add comedic elements: funny expressions, witty remarks, playful language.
+       - Use relatable humor that Thai audiences will enjoy.
+       - Include reaction shots, exaggerated expressions, and comedic timing.
+       - The KEY INFORMATION must still be delivered clearly - don't sacrifice substance for laughs.
+       - Think "Edutainment" - educate while entertaining.
+       - Add visual gags, funny analogies, and humorous comparisons.
+       - Characters should have expressive, amusing personalities.
+       - Keywords: ${moodConfig.promptKeywords}
+       - Camera: ${moodConfig.cameraMovement}
+       - Pacing: ${moodConfig.pacing}`
+        : `MOOD/TONE: "${moodConfig.label}" (${moodConfig.labelTh})
        - Mood Keywords: ${moodConfig.promptKeywords}
        - Camera Movement Style: ${moodConfig.cameraMovement}
        - Pacing: ${moodConfig.pacing}
