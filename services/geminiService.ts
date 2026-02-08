@@ -301,36 +301,113 @@ export const rewriteScript = async (
 };
 
 /**
- * Generates a full production guide (Remix/Style/Scenes).
+ * Video Mood Configurations - Define how each mood affects the video prompts
+ * 5 Thai-focused mood options for TikTok content creators
+ */
+export const VIDEO_MOOD_CONFIGS = {
+  original: {
+    id: 'original' as const,
+    label: 'Original',
+    labelTh: 'ตามต้นฉบับ',
+    emoji: '🎬',
+    description: 'รักษาโทน พลังงาน และอารมณ์ตามต้นฉบับเดิม',
+    promptKeywords: 'natural flow, authentic energy, match source material mood',
+    cameraMovement: 'varied as appropriate to scene',
+    pacing: 'match original timing and rhythm'
+  },
+  excited: {
+    id: 'excited' as const,
+    label: 'Exciting',
+    labelTh: 'ตื่นเต้นเร้าใจ',
+    emoji: '🔥',
+    description: 'พลังงานสูง ลุ้นระทึก สร้างความตื่นเต้นให้ผู้ชม',
+    promptKeywords: 'thrilling, suspenseful, high energy, dramatic tension, gripping, intense expressions, dynamic lighting, exciting atmosphere',
+    cameraMovement: 'quick cuts, dramatic zoom, handheld intensity, shaky cam for tension',
+    pacing: 'fast-paced, punchy transitions, building anticipation, climactic moments'
+  },
+  energetic: {
+    id: 'energetic' as const,
+    label: 'Energetic',
+    labelTh: 'กระฉับกระเฉง',
+    emoji: '⚡',
+    description: 'คล่องแคล่ว กระปรี้กระเปร่า เต็มไปด้วยพลัง',
+    promptKeywords: 'action-packed, athletic, bold movements, high contrast, powerful stance, vibrant energy, active motion',
+    cameraMovement: 'tracking shots, follow cam, dynamic angles, fast pan',
+    pacing: 'rhythmic, beat-driven, punchy, upbeat'
+  },
+  emotional: {
+    id: 'emotional' as const,
+    label: 'Emotional',
+    labelTh: 'เศร้าซึ้ง',
+    emoji: '💔',
+    description: 'ซาบซึ้ง กินใจ สร้างอารมณ์ร่วมกับผู้ชม',
+    promptKeywords: 'melancholic, touching, heartfelt, soft focus, moody lighting, intimate moments, tearful expressions, bittersweet atmosphere',
+    cameraMovement: 'slow push-in, lingering shots, close-ups on faces, gentle dolly',
+    pacing: 'slow build, emotional crescendo, heavy pauses for impact, breathing room'
+  },
+  cinematic: {
+    id: 'cinematic' as const,
+    label: 'Cinematic',
+    labelTh: 'อลังการภาพยนตร์',
+    emoji: '🎥',
+    description: 'ยิ่งใหญ่อลังการ สไตล์หนังฮอลลีวูด เน้นความสวยงาม',
+    promptKeywords: 'epic cinematic, blockbuster style, dramatic lighting, high contrast, intense composition, shadow play, movie-quality, grand scale, hollywood aesthetic',
+    cameraMovement: 'slow motion, epic wide shots, dramatic reveal, sweeping crane, dolly zoom',
+    pacing: 'building tension, impactful pauses, climactic moments, theatrical timing'
+  }
+};
+
+/**
+ * Generates a full production guide (Remix/Style/Scenes) with mood control.
  */
 export const generateProductionGuide = async (
   apiKey: string,
   baseScript: string,
   style: 'REAL' | 'PIXAR',
-  remixTopic?: string
+  remixTopic?: string,
+  mood: 'original' | 'excited' | 'energetic' | 'emotional' | 'cinematic' = 'original'
 ): Promise<ProductionGuide> => {
   const ai = new GoogleGenAI({ apiKey });
 
+  const moodConfig = VIDEO_MOOD_CONFIGS[mood];
+
   const stylePrompt = style === 'PIXAR'
     ? `VISUAL STYLE: "Pixar-style 3D Animation".
-       - Keywords to use in prompts: "Pixar-style, 3D render, cinematic lighting, soft glow, warm tone, vibrant colors, high detail, cute, expressive characters".
-       - Aspect Ratio: 9:16 (Vertical).
+       - Base Keywords: "Pixar-style, 3D render, cinematic lighting, soft glow, warm tone, vibrant colors, high detail, cute, expressive characters".
+       - Aspect Ratio: 9:16 (Vertical for TikTok).
        - Atmosphere: Friendly, cheerful, high quality animation.`
     : `VISUAL STYLE: "Realistic Live Action".
-       - Keywords to use in prompts: "Photorealistic, 4k, cinematic lighting, real human actor, natural look, authentic, high resolution".
-       - Aspect Ratio: 9:16 (Vertical).
+       - Base Keywords: "Photorealistic, 4k, cinematic lighting, real human actor, natural look, authentic, high resolution".
+       - Aspect Ratio: 9:16 (Vertical for TikTok).
        - Atmosphere: Professional, trustworthy, authentic.`;
+
+  const moodPrompt = mood === 'original'
+    ? `MOOD/TONE: "Match Original Source"
+       - IMPORTANT: Analyze the emotional tone and energy of the Base Script.
+       - Mirror the EXACT same vibe, humor, pacing, and emotional beats.
+       - If the original is fun and lighthearted, keep it fun and lighthearted.
+       - If the original is serious, maintain that seriousness.
+       - DO NOT make it more "professional" or "corporate" unless that's the original's tone.
+       - Preserve: jokes, playfulness, excitement, casual language, personality.`
+    : `MOOD/TONE: "${moodConfig.label}" (${moodConfig.labelTh})
+       - Mood Keywords: ${moodConfig.promptKeywords}
+       - Camera Movement Style: ${moodConfig.cameraMovement}
+       - Pacing: ${moodConfig.pacing}
+       - Apply this mood consistently across ALL scenes.`;
 
   const remixInstruction = remixTopic
     ? `TASK: "REMIX" the content. 
        - Analyze the STRUCTURE of the Base Script (e.g. Hook -> Pain Point -> Solution -> Call to Action).
        - Create a NEW script about the topic: "${remixTopic}".
        - Keep the EXACT SAME pacing, timestamp structure, and emotional beat as the base script.
-       - Ensure the new script is 100% Safe/Compliant with TikTok rules (No overclaims).`
-    : `TASK: Use the Base Script content directly. Break it down into scenes.`;
+       - Ensure the new script is 100% Safe/Compliant with TikTok rules (No overclaims).
+       - Apply the mood and energy settings to the new content.`
+    : `TASK: Use the Base Script content directly. Break it down into scenes.
+       - PRESERVE the original energy, personality, and tone from the script.
+       - If the script sounds casual and fun, the visualPrompt should reflect that energy.`;
 
   const prompt = `
-  You are an expert AI Video Producer.
+  You are an expert AI Video Producer who excels at matching the mood and energy of source material.
   
   Base Script:
   "${baseScript}"
@@ -339,21 +416,34 @@ export const generateProductionGuide = async (
   
   ${stylePrompt}
   
+  ${moodPrompt}
+  
+  CRITICAL INSTRUCTIONS FOR VISUAL PROMPTS:
+  1. The visualPrompt should feel ALIVE and FUN, not stiff or corporate.
+  2. Include movement descriptions: "walking confidently", "gesturing enthusiastically", "laughing naturally".
+  3. Add environmental details that match the mood.
+  4. For ${mood === 'original' ? 'original tone' : moodConfig.labelTh} videos:
+     - ${mood === 'original' ? 'Match the exact energy from the script text' : moodConfig.promptKeywords}
+     - Camera: ${mood === 'original' ? 'Varied to match scene needs' : moodConfig.cameraMovement}
+  5. The actionGuide should describe SPECIFIC expressions and body language, not generic directions.
+  
   OUTPUT FORMAT:
   Return a strictly valid JSON object (no markdown). Structure:
   {
-    "topic": "${remixTopic || "Original Topic"}",
+    "topic": "${remixTopic || 'Original Topic'}",
     "style": "${style}",
+    "mood": "${mood}",
     "scenes": [
       {
         "timestamp": "[00:00]",
         "script": "The spoken line for this scene (Thai)",
-        "visualPrompt": "Detailed English prompt for AI Image/Video generator (Midjourney/Sora/Runway) based on the chosen style.",
-        "actionGuide": "Direction for the character (mood, gesture, facial expression) to match the audio."
+        "visualPrompt": "DETAILED English prompt that captures the mood. Include: subject action, expression, environment, lighting, camera movement, and energy level. Make it feel ${mood === 'original' ? 'authentic to source' : moodConfig.labelTh}.",
+        "actionGuide": "SPECIFIC direction: facial expression (smiling, concerned, excited), body language (leaning forward, gesturing with hands), energy level (high/medium/low), pauses or emphasis points."
       }
-      ...
     ]
   }
+  
+  Remember: The script might be in Thai but reflects a certain personality. YOUR JOB is to capture that personality in the English visualPrompts, not make it generic.
   `;
 
   try {

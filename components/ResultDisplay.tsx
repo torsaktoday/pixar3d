@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Copy, Check, Terminal, FileText, ShieldAlert, List, AlertTriangle, CheckCircle, RefreshCw, ArrowRight, FileCheck, Clapperboard, Wand2, Image as ImageIcon, Download, Search } from 'lucide-react';
-import { AnalysisResult, AnalysisMode, ProductionGuide, ProductionScene, ViolationCheckResult } from '../types';
-import { rewriteScript, generateProductionGuide, recheckScriptViolation, createPromptCard, downloadImage, downloadAllScenePrompts } from '../services/geminiService';
+import { Copy, Check, Terminal, FileText, ShieldAlert, List, AlertTriangle, CheckCircle, RefreshCw, ArrowRight, FileCheck, Clapperboard, Wand2, Image as ImageIcon, Download, Search, Music } from 'lucide-react';
+import { AnalysisResult, AnalysisMode, ProductionGuide, ProductionScene, ViolationCheckResult, VideoMood } from '../types';
+import { rewriteScript, generateProductionGuide, recheckScriptViolation, createPromptCard, downloadImage, downloadAllScenePrompts, VIDEO_MOOD_CONFIGS } from '../services/geminiService';
 
 interface ResultDisplayProps {
   result: AnalysisResult | null;
@@ -49,6 +49,7 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, loading, a
   const [remixTopic, setRemixTopic] = useState('');
   const [visualStyle, setVisualStyle] = useState<'REAL' | 'PIXAR'>('PIXAR');
   const [productionGuide, setProductionGuide] = useState<ProductionGuide | null>(null);
+  const [videoMood, setVideoMood] = useState<VideoMood>('original'); // Default: ตามต้นฉบับ
 
   // Re-check Violation State
   const [recheckingScript, setRecheckingScript] = useState(false);
@@ -101,7 +102,7 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, loading, a
     if (!fixedScript || !apiKey) return;
     setGeneratingGuide(true);
     try {
-      const guide = await generateProductionGuide(apiKey, fixedScript, visualStyle, remixTopic);
+      const guide = await generateProductionGuide(apiKey, fixedScript, visualStyle, remixTopic, videoMood);
       setProductionGuide(guide);
     } catch (error) {
       console.error(error);
@@ -436,6 +437,44 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, loading, a
                     </div>
                   </div>
 
+                  {/* Video Mood/Motion Selector */}
+                  <div className="mb-6 space-y-3">
+                    <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                      <Music className="w-4 h-4 text-purple-400" /> Motion VDO Tone Selection (เลือกอารมณ์วิดีโอ)
+                    </label>
+                    <p className="text-xs text-slate-500 mb-3">
+                      การเลือกโทนจะปรับปรุง Video Prompt และจังหวะภาพให้เร้าใจหรือสอดคล้องตามที่ต้องการ
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                      {Object.values(VIDEO_MOOD_CONFIGS).map((mood) => (
+                        <button
+                          key={mood.id}
+                          onClick={() => setVideoMood(mood.id)}
+                          className={`p-3 rounded-xl text-center transition-all border ${videoMood === mood.id
+                            ? 'bg-gradient-to-br from-purple-600/30 to-pink-600/30 border-purple-500 ring-2 ring-purple-500/50'
+                            : 'bg-slate-900/50 border-slate-700 hover:border-slate-500 hover:bg-slate-800/50'
+                            }`}
+                        >
+                          <div className="text-2xl mb-1">{mood.emoji}</div>
+                          <div className={`text-xs font-medium ${videoMood === mood.id ? 'text-purple-300' : 'text-slate-400'}`}>
+                            {mood.labelTh}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    {/* Selected Mood Description */}
+                    <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700/50">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg">{VIDEO_MOOD_CONFIGS[videoMood].emoji}</span>
+                        <span className="text-sm font-medium text-purple-400">{VIDEO_MOOD_CONFIGS[videoMood].labelTh}</span>
+                      </div>
+                      <p className="text-xs text-slate-400">{VIDEO_MOOD_CONFIGS[videoMood].description}</p>
+                      <div className="mt-2 text-xs text-slate-500">
+                        <span className="text-purple-400/80">Keywords:</span> {VIDEO_MOOD_CONFIGS[videoMood].promptKeywords}
+                      </div>
+                    </div>
+                  </div>
+
                   <button
                     onClick={handleGenerateGuide}
                     disabled={generatingGuide}
@@ -461,10 +500,15 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, loading, a
             <div className="space-y-6 animate-fade-in">
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <h3 className="text-xl font-bold text-white">Production Breakdown</h3>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm text-purple-400 bg-purple-400/10 px-3 py-1 rounded-full border border-purple-400/20">
                     {productionGuide.style === 'PIXAR' ? '🧸 3D Animation' : '🎥 Live Action'}
                   </span>
+                  {productionGuide.mood && (
+                    <span className="text-sm text-pink-400 bg-pink-400/10 px-3 py-1 rounded-full border border-pink-400/20">
+                      {VIDEO_MOOD_CONFIGS[productionGuide.mood as keyof typeof VIDEO_MOOD_CONFIGS]?.emoji || '🎬'} {VIDEO_MOOD_CONFIGS[productionGuide.mood as keyof typeof VIDEO_MOOD_CONFIGS]?.labelTh || productionGuide.mood}
+                    </span>
+                  )}
                   <button
                     onClick={handleDownloadAllPrompts}
                     disabled={downloadingImages}

@@ -28,9 +28,30 @@ export interface ProductionScene {
   actionGuide: string;
 }
 
+// Video Motion/Mood Types - 5 Thai-focused options
+export type VideoMood =
+  | 'original'      // ตามต้นฉบับ - Default
+  | 'excited'       // ตื่นเต้นเร้าใจ
+  | 'energetic'     // กระฉับกระเฉง
+  | 'emotional'     // เศร้าซึ้ง
+  | 'cinematic';    // อลังการภาพยนตร์
+
+
+export interface VideoMoodConfig {
+  id: VideoMood;
+  label: string;
+  labelTh: string;
+  emoji: string;
+  description: string;
+  promptKeywords: string;
+  cameraMovement: string;
+  pacing: string;
+}
+
 export interface ProductionGuide {
   topic: string;
   style: string;
+  mood?: VideoMood;
   scenes: ProductionScene[];
 }
 
@@ -49,7 +70,7 @@ export interface TikTokRule {
   updatedAt: number;
 }
 
-export type RuleCategory = 
+export type RuleCategory =
   | 'overclaims'
   | 'medical_supplement'
   | 'forbidden_pairings'
